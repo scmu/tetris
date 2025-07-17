@@ -4,10 +4,12 @@ import Graphics.Gloss
 import Graphics.Gloss.Data.ViewPort
 import Graphics.Gloss.Interface.IO.Game
 
+import System.Random (mkStdGen, initStdGen)
+
 import Config
 import qualified Display
 import GameLogic
-import System.Random (mkStdGen, initStdGen)
+import Types
 
 
 main :: IO ()

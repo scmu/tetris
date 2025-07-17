@@ -7,18 +7,7 @@ import Data.Array.Unboxed
 import System.Random
 
 import Config
-
-data State = Between (Maybe GridState) -- state of previous game, if any
-                     StdGen
-           | CompeteAnim [Int] GridState Int GameState
-           | InGame GameState
-
-inGame :: (GameState -> GameState) -> State -> State
-inGame f (InGame gst) = InGame (f gst)
-inGame f st           = st
-
-data GEvent = TimeElapse | KeyPressed Key
-data Key = KUp | KDown | KLeft | KRight | KSpace | KNum Int
+import Types
 
 nextState :: State -> GEvent -> State
 
@@ -39,24 +28,6 @@ nextState (InGame state) (KeyPressed KSpace) = fastDrop state
 nextState (CompeteAnim _ _ 0 state) TimeElapse = InGame state
 nextState (CompeteAnim rc old n state) TimeElapse = CompeteAnim rc old (n-1) state
 nextState st@(CompeteAnim _ _ _ _) _ = st
-
----
-
-data GameState = GState
-  { lvl       :: (Int, Int)  -- level, and maxFrameCnt = (6 - lvl) `max` 0
-  , tet       :: TetState
-  , nextT     :: Tetrad
-  , grid      :: GridState
-
-  , frameCnt  :: Int
-  , randSeed  :: StdGen
-  }
-
-type TetState = (Tetrad, (Int, Int), Orientation)
-type GridState = UArray (Int, Int) Word8
-
-data Orientation = TUp | TRight | TDown | TLeft
-   deriving (Eq, Ord, Ix)
 
 initState :: Int -> StdGen -> GameState
 initState lvl seed =

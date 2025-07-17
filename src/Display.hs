@@ -4,10 +4,9 @@ import Data.Word
 import Data.Array.IArray
 import Graphics.Gloss
 
+import Types
 import Config
 import GameLogic
-
---
 
 display :: State -> Picture
 display (Between _ _) =

@@ -4,6 +4,8 @@ import Data.Word
 import Data.Array.IArray
 import Graphics.Gloss
 
+import Types (Tetrad, tI, tJ, tL, tO, tS, tT, tZ)
+
 winWidth, winHeight :: Int
 winWidth  = 1000
 winHeight = 600
@@ -33,16 +35,6 @@ data Tetrad = I | J | L | O | S | T | Z
 tetrads = [I, J, L, O, S, T, Z]
 -}
 
-type Tetrad = Word8
-
-tI, tJ, tL, tO, tS, tT, tZ :: Tetrad
-tI = 0
-tJ = 1
-tL = 2
-tO = 3
-tS = 4
-tT = 5
-tZ = 6
 
 tetMainColors :: [(Float, Float, Float)]
 tetMainColors = map clamp
