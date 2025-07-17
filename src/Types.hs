@@ -5,7 +5,7 @@ import Data.Array.IArray
 import Data.Array.Unboxed
 import System.Random
 
-data State = Between (Maybe GridState) -- state of previous game, if any
+data State = Between (Maybe GameState) -- state of previous game, if any
                      StdGen
            | CompeteAnim [Int] GridState Int GameState
            | InGame GameState

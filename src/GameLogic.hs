@@ -126,7 +126,7 @@ fall :: GameState -> State
 fall st | noCollision (grid st) minos' =
            InGame $ st { tet = (t, pos', ori, minos') }
         | {- collision and -} stuck y =
-          Between (Just (grid st)) (randSeed st)  -- Game Over
+          Between (Just st) (randSeed st)  -- Game Over
         | otherwise = settleAndComplete st
   where (t, pos@(x,y), ori, minos) = tet st
         pos' = (x,y-1)

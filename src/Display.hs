@@ -9,13 +9,17 @@ import Config
 import GameLogic
 
 display :: State -> Picture
-display (Between _ _) =
+display (Between Nothing _) =
    translate (- winWidth' * 0.25) 0 .
    scale 0.4 0.4 . Text $ "Choose Level (0..7)"
+display (Between (Just prevGame) _) =
+  pictures [ board prevGame
+           , panel prevGame
+           , endPrompt prevGame
+           ]
 display (InGame state) =
   pictures [ board state
            , panel state
-
            ]
 display (CompeteAnim rc old fc state) =
   pictures [ boardAnim rc old fc
@@ -122,6 +126,17 @@ panel state =
                     $ text ("Rows: " ++ show (rowsCleared state))
        scoreInfo = translate 10 (- (textStartY + 60)) . scale 0.15 0.15
                     $ text ("Score: " ++ show (score state))
+
+-- game over prompt
+
+endPrompt :: GameState -> Picture
+endPrompt st = pictures $
+  [ color (withAlpha 0.5 (greyN 0.9)) $ rectangleSolid 800 300
+  , translate (- (winWidth' * 0.3)) 30 .
+     scale 0.3 0.3 . text $ "Game Over"
+  , translate (- (winWidth' * 0.3)) (-10) .
+     scale 0.3 0.3 . text $ ("Score: " ++ show (score st))
+  ]
 
 -- picture elements
 
