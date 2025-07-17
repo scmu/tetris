@@ -37,12 +37,16 @@ initState lvl seed =
             initGrid
             (computeShadow initGrid startingPos minos)
 
+            0 0
+
             ((6 - lvl) `max` 0)
             seed1
-  where initGrid = genArray ((0,0), (brdWidth - 1, brdHeight + topBuffer - 1))
-                     (const 7)
-        (~(t0, seed0), ~(t1,seed1)) = (nextTet seed, nextTet seed0)
+  where (~(t0, seed0), ~(t1,seed1)) = (nextTet seed, nextTet seed0)
         minos = minosOfATet t0 startingPos TUp
+
+initGrid :: GridState
+initGrid = genArray ((0,0), (brdWidth - 1, brdHeight + topBuffer - 1))
+                   (const 7)
 
 startingPos = (brdWidth `div` 2, brdHeight + 3)
 
@@ -182,10 +186,13 @@ computeShadow grid (x,y) minos
 
 settleAndComplete :: GameState -> State
 settleAndComplete st =
-  let st' = st { tet = tet'
+  let st' = levelUpCheck $
+            st { tet = tet'
                , nextT = t'
                , grid = grid'
                , shadow = computeShadow grid' startingPos minos'
+               , rowsCleared = rowsCleared st + length rc
+               , score = score st + calcScore (length rc) (fst (lvl st))
                , randSeed = g'}
   in case rc of [] -> InGame st'
                 _  -> CompeteAnim rc (fuseIntoGrid (tet st) (grid st)) 4 st'
@@ -231,3 +238,24 @@ fuseIntoGridRmCompleted t minos compRows grid =
        yMap = listArray (0, brdHeight + topBuffer - 1 - length compRows)
                 (filter (not . (`elem` compRows))
                       [0 .. brdHeight + topBuffer - 1])
+
+
+levelUpCheck :: GameState -> GameState
+levelUpCheck st
+  | rowsCleared st >= lvl' * 10 =
+     st { lvl = (lvl', ((6 - lvl') `max` 0))
+        , grid = initGrid
+        , shadow = computeShadow initGrid pos minos }
+  | otherwise = st
+ where lvl' = fst (lvl st) + 1
+       (_, pos, _, minos) = tet st
+
+---
+
+calcScore :: Int -> Int -> Int
+calcScore 0 lvl = 0
+calcScore 1 lvl = 10 * (lvl+1)
+calcScore 2 lvl = 30 * (lvl+1)
+calcScore 3 lvl = 50 * (lvl+1)
+calcScore 4 lvl = 80 * (lvl+1)
+calcScore _ _ = 0

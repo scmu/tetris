@@ -14,15 +14,12 @@ display (Between _ _) =
    scale 0.4 0.4 . Text $ "Choose Level (0..7)"
 display (InGame state) =
   pictures [ board state
-           , translate (brdWidth' * gridSize * 0.5 + 40)
-                       (6 * gridSize)
-               (scale gridSize gridSize (drawTetrad' (nextT state) TUp))
+           , panel state
+
            ]
 display (CompeteAnim rc old fc state) =
   pictures [ boardAnim rc old fc
-           , translate (brdWidth' * gridSize * 0.5 + 40)
-                       (6 * gridSize)
-               (scale gridSize gridSize (drawTetrad' (nextT state) TUp))
+           , panel state
            ]
 
 
@@ -34,8 +31,8 @@ board st | (t, _, _, minos) <- tet st =
                   (- brdHeight' * gridSize * 0.5) $
         pictures
          ( scale gridSize gridSize
-            (pictures [border, drawTetrad t minos,
-                       drawShadow (snd (shadow st))])
+            (pictures [ border, drawShadow (snd (shadow st))
+                      , drawTetrad t minos])
          : drawGrid (grid st))
 
 boardAnim :: [Int] -> GridState -> Int -> Picture
@@ -106,6 +103,26 @@ drawShadowMino :: Pos -> Picture
 drawShadowMino (x,y) = color (withAlpha 0.5 (greyN 0.9)) (square (x',y') 1)
   where (x',y') = (fromIntegral x, fromIntegral y)
 
+-- panel
+
+panel :: GameState -> Picture
+panel state =
+   translate (brdWidth' * gridSize / 2 + 10) (gridSize * 10) .
+   pictures $ [ rectBox (0,0) (gridSize * 4 + 60) (- 150)
+              , next
+              , levelInfo
+              , rowCInfo
+              , scoreInfo ]
+ where next = translate (gridSize * 2 + 5) (- (gridSize * 2 + 10) )
+                (scale gridSize gridSize (drawTetrad' (nextT state) TUp))
+       textStartY = gridSize * 3 + 10
+       levelInfo = translate 10 (- (textStartY + 10)) . scale 0.15 0.15
+                    $ text ("Level: " ++ show (fst . lvl $ state))
+       rowCInfo = translate 10 (- (textStartY + 35)) . scale 0.15 0.15
+                    $ text ("Rows: " ++ show (rowsCleared state))
+       scoreInfo = translate 10 (- (textStartY + 60)) . scale 0.15 0.15
+                    $ text ("Score: " ++ show (score state))
+
 -- picture elements
 
 dot :: Point -> Picture
@@ -114,3 +131,7 @@ dot (x,y) = square (x,y) 1
 square :: Point -> Float -> Picture
 square (x,y) len =
   polygon [(x,y), (x+len,y), (x+len,y+len), (x, y+len)]
+
+rectBox :: Point -> Float -> Float -> Picture
+rectBox (x, y) width height =
+  line [(x,y), (x+width ,y), (x+width,y+height), (x, y+height), (x,y)]

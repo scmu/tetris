@@ -18,14 +18,17 @@ data GEvent = TimeElapse | KeyPressed Key
 data Key = KUp | KDown | KLeft | KRight | KSpace | KNum Int
 
 data GameState = GState
-  { lvl       :: (Int, Int)  -- level, and maxFrameCnt = (6 - lvl) `max` 0
-  , tet       :: TetState
-  , nextT     :: Tetrad
-  , grid      :: GridState
-  , shadow    :: (Pos, Minos)
+  { lvl         :: (Int, Int)  -- level, and maxFrameCnt = (6 - lvl) `max` 0
+  , tet         :: TetState
+  , nextT       :: Tetrad
+  , grid        :: GridState
+  , shadow      :: (Pos, Minos)
 
-  , frameCnt  :: Int
-  , randSeed  :: StdGen
+  , rowsCleared :: Int
+  , score       :: Int
+
+  , frameCnt    :: Int
+  , randSeed    :: StdGen
   }
 
 type Pos = (Int, Int)
