@@ -29,13 +29,14 @@ display (CompeteAnim rc old fc state) =
 -- In Game
 
 board :: GameState -> Picture
-board st | (t, pos, ori) <- tet st =
+board st | (t, _, _, minos) <- tet st =
         translate (- brdWidth' * gridSize * 0.5)
                   (- brdHeight' * gridSize * 0.5) $
         pictures
-         (scale gridSize gridSize border :
-          scale gridSize gridSize (drawTetrad t pos ori) :
-          drawGrid (grid st))
+         ( scale gridSize gridSize
+            (pictures [border, drawTetrad t minos,
+                       drawShadow (snd (shadow st))])
+         : drawGrid (grid st))
 
 boardAnim :: [Int] -> GridState -> Int -> Picture
 boardAnim rc old fc =
@@ -57,7 +58,7 @@ drawGrid grid = map drawOneMino coords
                    else Blank
             t -> scale gridSize gridSize (drawMino t pos)
 
-coords :: [(Int, Int)]
+coords :: [Pos]
 coords = [(x,y) | x <- [0 .. brdWidth - 1], y <- [0 .. brdHeight]]
 
 drawGridAnim :: [Int] -> GridState -> Int ->  [Picture]
@@ -70,24 +71,19 @@ drawGridAnim rc grid fc = map drawOneMino
                    else Blank
             t -> scale gridSize gridSize (drawMino t pos)
 
-{-
-dots :: Picture
-dots = pictures [dot (fromIntegral x * gridSize,
-                      fromIntegral y * gridSize) |
-         x <- [1 .. brdWidth - 1], y <- [1 .. brdHeight - 1]] -}
-
-drawTetrad :: Tetrad -> (Int, Int) -> Orientation -> Picture
-drawTetrad t pos ori =
-   pictures $ map (drawMino t)
-     (filter inBoard (minosOfATet t pos ori))
+drawTetrad :: Tetrad -> Minos -> Picture
+drawTetrad t minos =
+   pictures $ map (drawMino t) (filter inBoard minos)
  where inBoard (x,y) = 0 <= x && x < brdWidth &&
                        0 <= y && y < brdHeight
 
 drawTetrad' :: Tetrad -> Orientation -> Picture
 drawTetrad' t ori = pictures $ map (drawMino t) (tetradSpec t ori)
 
+drawShadow :: Minos -> Picture
+drawShadow = pictures . map drawShadowMino
 
-drawMino :: Tetrad -> (Int,Int) -> Picture
+drawMino :: Tetrad -> Pos -> Picture
 -- simple "flat" style
 -- drawTetrad t (x,y) =
 --   color (tetColors ! t)
@@ -105,6 +101,10 @@ drawMino t (x,y) =
         (polygon [(x'+1, y'), (x'+0.9, y'+0.1), (x'+0.9, y'+0.9), (x'+1, y'+1)])
     ]
  where (x',y') = (fromIntegral x, fromIntegral y)
+
+drawShadowMino :: Pos -> Picture
+drawShadowMino (x,y) = color (withAlpha 0.5 (greyN 0.9)) (square (x',y') 1)
+  where (x',y') = (fromIntegral x, fromIntegral y)
 
 -- picture elements
 

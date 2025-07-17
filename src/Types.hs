@@ -22,13 +22,16 @@ data GameState = GState
   , tet       :: TetState
   , nextT     :: Tetrad
   , grid      :: GridState
+  , shadow    :: (Pos, Minos)
 
   , frameCnt  :: Int
   , randSeed  :: StdGen
   }
 
-type TetState = (Tetrad, (Int, Int), Orientation)
-type GridState = UArray (Int, Int) Word8
+type Pos = (Int, Int)
+type TetState = (Tetrad, Pos, Orientation, Minos)
+type Minos = [Pos]
+type GridState = UArray Pos Word8
 
 data Orientation = TUp | TRight | TDown | TLeft
    deriving (Eq, Ord, Ix)

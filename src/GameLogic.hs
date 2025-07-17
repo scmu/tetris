@@ -4,6 +4,7 @@ import Data.Word
 import Data.List (all)
 import Data.Array.IArray
 import Data.Array.Unboxed
+import Control.Arrow ((***))
 import System.Random
 
 import Config
@@ -32,14 +33,16 @@ nextState st@(CompeteAnim _ _ _ _) _ = st
 initState :: Int -> StdGen -> GameState
 initState lvl seed =
      GState (lvl, ((6 - lvl) `max` 0))
-            (t0, startingPos, TUp) t1
+            (t0, startingPos, TUp, minos) t1
             initGrid
+            (computeShadow initGrid startingPos minos)
 
             ((6 - lvl) `max` 0)
             seed1
   where initGrid = genArray ((0,0), (brdWidth - 1, brdHeight + topBuffer - 1))
                      (const 7)
         (~(t0, seed0), ~(t1,seed1)) = (nextTet seed, nextTet seed0)
+        minos = minosOfATet t0 startingPos TUp
 
 startingPos = (brdWidth `div` 2, brdHeight + 3)
 
@@ -96,7 +99,7 @@ tetradSpec 4 = specS
 tetradSpec 5 = specT
 tetradSpec 6 = specZ
 
-  -- rowsToCheck for completion
+  -- rowsToCheck for completion. For efficiency.
 rowsToCheck :: Array (Tetrad, Orientation) (Int, Int)
 rowsToCheck = genArray ((0,TUp), (6,TLeft))
     (\(t, ori) -> let ys = map snd (tetradSpec t ori)
@@ -105,53 +108,61 @@ rowsToCheck = genArray ((0,TUp), (6,TLeft))
 minosOfATet t pos ori = zipWith plus (repeat pos) (tetradSpec t ori)
   where plus (x,y) (z,w) = (x+z, y+w)
 
+shiftDown, shiftLeft, shiftRight :: Minos -> Minos
+shiftDown  = map (id *** dec) where dec n = n - 1
+shiftLeft  = map (dec *** id) where dec n = n - 1
+shiftRight = map (inc *** id) where inc n = n + 1
+
 nextTet :: StdGen -> (Tetrad, StdGen)
 nextTet g = uniformR (0,6) g
 
 -- movements
 
 fall :: GameState -> State
-fall st | noCollision (grid st) tetMinos =
-           InGame $ st { tet = (t, pos', ori) }
+fall st | noCollision (grid st) minos' =
+           InGame $ st { tet = (t, pos', ori, minos') }
         | {- collision and -} stuck y =
           Between (Just (grid st)) (randSeed st)  -- Game Over
         | otherwise = settleAndComplete st
-  where (t, pos@(x,y), ori) = tet st
+  where (t, pos@(x,y), ori, minos) = tet st
         pos' = (x,y-1)
-        tetMinos = minosOfATet t pos' ori
+        minos' = shiftDown minos
         stuck y = y >= brdHeight
 
 moveRight :: GameState -> State
-moveRight st | noCollision (grid st) tetMinos =
-                InGame $ st { tet = (t, pos', ori) }
+moveRight st | noCollision (grid st) minos' =
+                InGame $ st { tet = (t, pos', ori, minos')
+                            , shadow = computeShadow (grid st) pos' minos'}
              | otherwise = InGame st
- where (t, pos@(x,y), ori) = tet st
+ where (t, pos@(x,y), ori, minos) = tet st
        pos' = (x+1,y)
-       tetMinos = minosOfATet t pos' ori
+       minos' = shiftRight minos
 
 moveLeft :: GameState -> State
-moveLeft st | noCollision (grid st) tetMinos =
-               InGame $ st { tet = (t, pos', ori) }
+moveLeft st | noCollision (grid st) minos' =
+               InGame $ st { tet = (t, pos', ori, minos')
+                           , shadow = computeShadow (grid st) pos' minos'}
             | otherwise = InGame st
- where (t, pos@(x,y), ori) = tet st
+ where (t, pos@(x,y), ori, minos) = tet st
        pos' = (x-1,y)
-       tetMinos = minosOfATet t pos' ori
+       minos' = shiftLeft minos
 
 moveDown :: GameState -> State
-moveDown st | noCollision (grid st) tetMinos =
-               InGame $ st { tet = (t, pos', ori) }
+moveDown st | noCollision (grid st) minos' =
+               InGame $ st { tet = (t, pos', ori, minos') }
             | otherwise = InGame st
-  where (t, pos@(x,y), ori) = tet st
+  where (t, pos@(x,y), ori, minos) = tet st
         pos' = (x,y-1)
-        tetMinos = minosOfATet t pos' ori
+        minos' = shiftDown minos
 
 simpRotate :: GameState -> State
-simpRotate st | noCollision (grid st) tetMinos =
-                InGame $ st { tet = (t, pos, ori') }
+simpRotate st | noCollision (grid st) minos' =
+                InGame $ st { tet = (t, pos, ori', minos')
+                            , shadow = computeShadow (grid st) pos minos' }
              | otherwise = InGame st
- where (t, pos@(x,y), ori) = tet st
+ where (t, pos@(x,y), ori, _) = tet st
        ori' = nextOri ori
-       tetMinos = minosOfATet t pos ori'
+       minos' = minosOfATet t pos ori'
 
 nextOri TUp    = TRight
 nextOri TRight = TDown
@@ -159,35 +170,41 @@ nextOri TDown  = TLeft
 nextOri TLeft  = TUp
 
 fastDrop :: GameState -> State
-fastDrop st = settleAndComplete (st { tet = (t, findDropPos pos, ori)} )
- where (t, pos, ori) = tet st
-       pos' = findDropPos pos
-       findDropPos (x,y)
-        | noCollision (grid st) (minosOfATet t (x,y-1) ori) = findDropPos (x,y-1)
-        | otherwise = (x,y)
+fastDrop st = settleAndComplete (st { tet = (t, pos', ori, minos')} )
+ where (t, pos, ori, minos) = tet st
+       (pos', minos') = shadow st
+
+computeShadow :: GridState -> Pos -> Minos -> (Pos, Minos)
+computeShadow grid (x,y) minos
+  | noCollision grid minos' = computeShadow grid (x,y-1) minos'
+  | otherwise = ((x,y), minos)
+ where minos' = shiftDown minos
 
 settleAndComplete :: GameState -> State
 settleAndComplete st =
-  let st' = st { tet = (nextT st, startingPos, TUp)
+  let st' = st { tet = tet'
                , nextT = t'
-               , grid = fuseIntoGridRmCompleted t tetMinos rc (grid st)
+               , grid = grid'
+               , shadow = computeShadow grid' startingPos minos'
                , randSeed = g'}
   in case rc of [] -> InGame st'
                 _  -> CompeteAnim rc (fuseIntoGrid (tet st) (grid st)) 4 st'
- where rc = rowsCompleted (tet st) tetMinos (grid st)
-       (t, pos@(x,y), ori) = tet st
-       tetMinos = minosOfATet t pos ori
+ where (t, pos@(x,y), ori, minos) = tet st
+       rc = rowsCompleted (tet st) (grid st)
        (t', g') = nextTet (randSeed st)
+       tet' = (nextT st, startingPos, TUp, minos')
+       minos' = minosOfATet (nextT st) startingPos TUp
+       grid' = fuseIntoGridRmCompleted t minos rc (grid st)
 
 -- collision and completion checks
 
-noCollision :: GridState -> [(Int, Int)] -> Bool
+noCollision :: GridState -> Minos -> Bool
 noCollision grid = all safe
    where safe (x,y) = 0 <= x && x < brdWidth && 0 <= y &&
                         (y >= brdHeight + topBuffer || grid ! (x,y) == 7)
 
-rowsCompleted :: TetState -> [(Int, Int)] -> GridState -> [Int]
-rowsCompleted (t, pos@(_,y), ori) minos grid =
+rowsCompleted :: TetState -> GridState -> [Int]
+rowsCompleted (t, pos@(_,y), ori, minos) grid =
    filter rowComplete rows
  where rows = let (i,j) = rowsToCheck ! (t, ori)
               in map (y+) [i..j]
@@ -195,13 +212,12 @@ rowsCompleted (t, pos@(_,y), ori) minos grid =
        occupied (x,y) = grid ! (x,y) /= 7 || (x,y) `elem` minos
 
 fuseIntoGrid :: TetState -> GridState -> GridState
-fuseIntoGrid (t, pos, ori) grid =
+fuseIntoGrid (t, pos, ori, minos) grid =
   genArray ((0,0), (brdWidth - 1, brdHeight + topBuffer - 1)) gen
- where tetMinos = minosOfATet t pos ori
-       gen p | p `elem` tetMinos = t
+ where gen p | p `elem` minos = t
              | otherwise = grid ! p
 
-fuseIntoGridRmCompleted :: Tetrad -> [(Int, Int)] -> [Int]
+fuseIntoGridRmCompleted :: Tetrad -> Minos -> [Int]
              -> GridState -> GridState
 fuseIntoGridRmCompleted t minos compRows grid =
   genArray ((0,0), (brdWidth - 1, brdHeight + topBuffer - 1)) gen
