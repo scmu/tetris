@@ -7,10 +7,10 @@ import System.Random
 
 data State = Between (Maybe GameState) -- state of previous game, if any
                      StdGen
-           | RowComplete [Int]      -- completed rows
-                         GridState  -- previous game grid
-                         GameState  -- new game state
            | InGame GameState
+           | RowComplete [Int]      -- completed rows
+                         GameState  -- previous game state
+                         GameState  -- new game state
            | Paused GameState
 
 inGame :: (GameState -> GameState) -> State -> State

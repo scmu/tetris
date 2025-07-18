@@ -51,10 +51,12 @@ input (EventKey (Char _) Down _ _) =
 input _ = id
 
 nextFrame :: Float -> InterfaceState -> InterfaceState
-nextFrame _ (GameLogic (RowComplete rc g state)) = RowCompleteAnim rc g state 4
-nextFrame _ (RowCompleteAnim rc g state 0) =
-    GameLogic (nextState (RowComplete rc g state) TimeElapse)
-nextFrame _ (RowCompleteAnim rc g state n) = (RowCompleteAnim rc g state (n-1))
+nextFrame _ (GameLogic (RowComplete rc prev state)) =
+    RowCompleteAnim rc prev state 4
+nextFrame _ (RowCompleteAnim rc prev state 0) =
+    GameLogic (nextState (RowComplete rc prev state) TimeElapse)
+nextFrame _ (RowCompleteAnim rc prev state n) =
+    RowCompleteAnim rc prev state (n-1)
 nextFrame _ (GameLogic state) = GameLogic (nextState state TimeElapse)
 
 

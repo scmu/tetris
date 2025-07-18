@@ -200,7 +200,9 @@ settleAndComplete st =
                , score = score st + calcScore (length rc) (fst (lvl st))
                , randSeed = g'}
   in case rc of [] -> InGame st'
-                _  -> RowComplete rc (fuseIntoGrid (tet st) (grid st)) st'
+                _  -> RowComplete rc
+                        (st { grid = fuseIntoGrid (tet st) (grid st) })
+                        st'
  where (t, pos@(x,y), ori, minos) = tet st
        rc = rowsCompleted (tet st) (grid st)
        (t', g') = nextTet (randSeed st)

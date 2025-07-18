@@ -23,13 +23,18 @@ display (GameLogic (InGame state)) =
            , panel state
            ]
 
+display (GameLogic (RowComplete _ prev _)) =
+  pictures [ board prev
+           , panel prev
+           ]
+
 display (GameLogic (Paused state)) =
   pictures [ boardPaused state
            , panel state
            ]
 
 display (RowCompleteAnim rc old state fc) =
-  pictures [ boardAnim rc old fc
+  pictures [ boardAnim rc (grid old) fc
            , panel state
            ]
 

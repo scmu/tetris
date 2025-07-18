@@ -4,7 +4,7 @@ import Types
 
 data InterfaceState =
        GameLogic State
-     | RowCompleteAnim [Int] GridState GameState Int
+     | RowCompleteAnim [Int] GameState GameState Int
 
 gameLogic :: (State -> State) -> InterfaceState -> InterfaceState
 gameLogic f (GameLogic state) = GameLogic (f state)
