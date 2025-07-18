@@ -64,14 +64,16 @@ coords :: [Pos]
 coords = [(x,y) | x <- [0 .. brdWidth - 1], y <- [0 .. brdHeight]]
 
 drawGridAnim :: [Int] -> GridState -> Int ->  [Picture]
-drawGridAnim rc grid fc = map drawOneMino
-            (filter (\(_,y) -> odd fc || not (y `elem` rc)) coords)
+drawGridAnim rc grid fc = map drawOneMino coords
    where drawOneMino pos@(x,y) = case grid ! pos of
             7 -> if x /= brdWidth - 1 then
                     dot (fromIntegral (x+1) * gridSize,
                          fromIntegral (y+1) * gridSize)
                    else Blank
-            t -> scale gridSize gridSize (drawMino t pos)
+            t -> scale gridSize gridSize
+                  (if even fc && y `elem` rc then
+                        drawMinoAlpha t pos 0.5
+                   else drawMino t pos)
 
 drawTetrad :: Tetrad -> Minos -> Picture
 drawTetrad t minos =
@@ -103,6 +105,22 @@ drawMino t (x,y) =
         (polygon [(x'+1, y'), (x'+0.9, y'+0.1), (x'+0.9, y'+0.9), (x'+1, y'+1)])
     ]
  where (x',y') = (fromIntegral x, fromIntegral y)
+
+drawMinoAlpha :: Tetrad -> Pos -> Float -> Picture
+drawMinoAlpha t (x,y) alpha =
+  pictures [
+      color (dim (tetColors ! t)) (square (x'+0.1, y'+0.1) 0.8)
+    , color (dim (tetLighterColors ! t))
+        (polygon [(x', y'+1), (x'+1, y'+1), (x'+0.9, y'+0.9), (x'+0.1, y'+0.9)])
+    , color (dim (tetLightColors ! t))
+        (polygon [(x', y'+1), (x'+0.1, y'+0.9), (x'+0.1, y'+0.1), (x', y')])
+    , color (dim (tetDarkerColors ! t))
+        (polygon [(x', y'), (x'+0.1, y'+0.1), (x'+0.9, y'+0.1), (x'+1, y')])
+    , color (dim (tetDarkColors ! t))
+        (polygon [(x'+1, y'), (x'+0.9, y'+0.1), (x'+0.9, y'+0.9), (x'+1, y'+1)])
+    ]
+ where (x',y') = (fromIntegral x, fromIntegral y)
+       dim = withAlpha alpha
 
 drawShadowMino :: Pos -> Picture
 drawShadowMino (x,y) = color (withAlpha 0.5 (greyN 0.9)) (square (x',y') 1)
