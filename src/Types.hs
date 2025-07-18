@@ -11,6 +11,8 @@ data State = Between (Maybe GameState) -- state of previous game, if any
            | RowComplete [Int]      -- completed rows
                          GameState  -- previous game state
                          GameState  -- new game state
+           | LevelUp Int        -- new level
+                     GameState  -- new game state
            | Paused GameState
 
 inGame :: (GameState -> GameState) -> State -> State

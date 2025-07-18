@@ -52,11 +52,19 @@ input _ = id
 
 nextFrame :: Float -> InterfaceState -> InterfaceState
 nextFrame _ (GameLogic (RowComplete rc prev state)) =
-    RowCompleteAnim rc prev state 4
+    RowCompleteAnim rc prev state Display.rowCompleteAnimFrame
 nextFrame _ (RowCompleteAnim rc prev state 0) =
     GameLogic (nextState (RowComplete rc prev state) TimeElapse)
 nextFrame _ (RowCompleteAnim rc prev state n) =
     RowCompleteAnim rc prev state (n-1)
+
+nextFrame _ (GameLogic (LevelUp lvl state)) =
+    LevelUpAnim lvl state Display.levelUpAnimFrame
+nextFrame _ (LevelUpAnim lvl state 0) =
+    GameLogic (nextState (LevelUp lvl state) TimeElapse)
+nextFrame _ (LevelUpAnim lvl state n) =
+    LevelUpAnim lvl state (n-1)
+
 nextFrame _ (GameLogic state) = GameLogic (nextState state TimeElapse)
 
 

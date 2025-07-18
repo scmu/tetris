@@ -28,12 +28,25 @@ nextState (InGame state) (KeyPressed KSpace) = fastDrop state
 nextState (InGame state) (KeyPressed KP) = Paused state
 nextState st@(InGame state) _ = st
 
-nextState (RowComplete _ _ state) TimeElapse = InGame state
+nextState (RowComplete _ _ state) TimeElapse = levelUpCheck state
 nextState st@(RowComplete _ _ _) _ = st
+
+nextState (LevelUp _ state) TimeElapse = InGame state
+nextState st@(LevelUp _ _) _ = st
 
 nextState (Paused state) (KeyPressed _) = InGame state
 nextState st@(Paused state) _ = st
 
+levelUpCheck :: GameState -> State
+levelUpCheck st
+  | rowsCleared st >= lvl' * 10 =
+     LevelUp lvl'
+       (st { lvl    = (lvl', ((6 - lvl') `max` 0))
+           , grid   = initGrid
+           , shadow = computeShadow initGrid pos minos })
+  | otherwise = InGame st
+ where lvl' = fst (lvl st) + 1
+       (_, pos, _, minos) = tet st
 
 initState :: Int -> StdGen -> GameState
 initState lvl seed =
@@ -191,8 +204,7 @@ computeShadow grid (x,y) minos
 
 settleAndComplete :: GameState -> State
 settleAndComplete st =
-  let st' = levelUpCheck $
-            st { tet = tet'
+  let st' = st { tet = tet'
                , nextT = t'
                , grid = grid'
                , shadow = computeShadow grid' startingPos minos'
@@ -245,17 +257,6 @@ fuseIntoGridRmCompleted t minos compRows grid =
        yMap = listArray (0, brdHeight + topBuffer - 1 - length compRows)
                 (filter (not . (`elem` compRows))
                       [0 .. brdHeight + topBuffer - 1])
-
-
-levelUpCheck :: GameState -> GameState
-levelUpCheck st
-  | rowsCleared st >= lvl' * 10 =
-     st { lvl = (lvl', ((6 - lvl') `max` 0))
-        , grid = initGrid
-        , shadow = computeShadow initGrid pos minos }
-  | otherwise = st
- where lvl' = fst (lvl st) + 1
-       (_, pos, _, minos) = tet st
 
 ---
 

@@ -12,7 +12,7 @@ import GameLogic
 display :: InterfaceState -> Picture
 display (GameLogic (Between Nothing _)) =
    translate (- winWidth' * 0.25) 0 .
-   scale 0.4 0.4 . Text $ "Choose Level (0..7)"
+   scale 0.4 0.4 . Text $ "Choose Level (0..6)"
 display (GameLogic (Between (Just prevGame) _)) =
   pictures [ board prevGame
            , panel prevGame
@@ -28,16 +28,31 @@ display (GameLogic (RowComplete _ prev _)) =
            , panel prev
            ]
 
+display (GameLogic (LevelUp _ state)) =
+  pictures [ board state
+           , panel state
+           ]
+
 display (GameLogic (Paused state)) =
   pictures [ boardPaused state
            , panel state
            ]
 
 display (RowCompleteAnim rc old state fc) =
-  pictures [ boardAnim rc (grid old) fc
+  pictures [ boardRCAnim rc (grid old) fc
            , panel state
            ]
 
+display (LevelUpAnim lvl state _) =
+  pictures [ boardLevelUpAnim lvl
+           , panel state
+           ]
+
+rowCompleteAnimFrame :: Int
+rowCompleteAnimFrame = 4
+
+levelUpAnimFrame :: Int
+levelUpAnimFrame = 10
 
 -- In Game
 
@@ -66,13 +81,24 @@ boardPaused st | (t, _, _, minos) <- tet st =
              text "Press any key to continue"
          ]
 
-boardAnim :: [Int] -> GridState -> Int -> Picture
-boardAnim rc old fc =
+boardRCAnim :: [Int] -> GridState -> Int -> Picture
+boardRCAnim rc old fc =
         translate (- brdWidth' * gridSize * 0.5)
                   (- brdHeight' * gridSize * 0.5) $
         pictures
          (scale gridSize gridSize border :
           drawGridAnim rc old fc)
+
+boardLevelUpAnim :: Int -> Picture
+boardLevelUpAnim lvl =
+        translate (- brdWidth' * gridSize * 0.5)
+                  (- brdHeight' * gridSize * 0.5) $
+        pictures
+         [ scale gridSize gridSize border
+         , translate 20 (brdHeight' * gridSize * 0.5) .
+           scale 0.15 0.15 $
+             text ("Level " ++ show lvl)
+         ]
 
 border :: Picture
 border = Line [(0, brdHeight'), (0,0), (brdWidth', 0), (brdWidth', brdHeight')]
