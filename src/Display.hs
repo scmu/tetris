@@ -5,23 +5,24 @@ import Data.Array.IArray
 import Graphics.Gloss
 
 import Types
+import InterfaceTypes
 import Config
 import GameLogic
 
-display :: State -> Picture
-display (Between Nothing _) =
+display :: InterfaceState -> Picture
+display (GameLogic (Between Nothing _)) =
    translate (- winWidth' * 0.25) 0 .
    scale 0.4 0.4 . Text $ "Choose Level (0..7)"
-display (Between (Just prevGame) _) =
+display (GameLogic (Between (Just prevGame) _)) =
   pictures [ board prevGame
            , panel prevGame
            , endPrompt prevGame
            ]
-display (InGame state) =
+display (GameLogic (InGame state)) =
   pictures [ board state
            , panel state
            ]
-display (CompeteAnim rc old fc state) =
+display (RowCompleteAnim rc old state fc) =
   pictures [ boardAnim rc old fc
            , panel state
            ]

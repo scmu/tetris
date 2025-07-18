@@ -7,7 +7,9 @@ import System.Random
 
 data State = Between (Maybe GameState) -- state of previous game, if any
                      StdGen
-           | CompeteAnim [Int] GridState Int GameState
+           | RowComplete [Int]      -- completed rows
+                         GridState  -- previous game grid
+                         GameState  -- new game state
            | InGame GameState
 
 inGame :: (GameState -> GameState) -> State -> State

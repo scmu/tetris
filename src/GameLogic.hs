@@ -26,9 +26,8 @@ nextState (InGame state) (KeyPressed KDown)  = moveDown state
 nextState (InGame state) (KeyPressed KUp)    = simpRotate state
 nextState (InGame state) (KeyPressed KSpace) = fastDrop state
 
-nextState (CompeteAnim _ _ 0 state) TimeElapse = InGame state
-nextState (CompeteAnim rc old n state) TimeElapse = CompeteAnim rc old (n-1) state
-nextState st@(CompeteAnim _ _ _ _) _ = st
+nextState (RowComplete _ _ state) TimeElapse = InGame state
+nextState st@(RowComplete _ _ _) _ = st
 
 initState :: Int -> StdGen -> GameState
 initState lvl seed =
@@ -195,7 +194,7 @@ settleAndComplete st =
                , score = score st + calcScore (length rc) (fst (lvl st))
                , randSeed = g'}
   in case rc of [] -> InGame st'
-                _  -> CompeteAnim rc (fuseIntoGrid (tet st) (grid st)) 4 st'
+                _  -> RowComplete rc (fuseIntoGrid (tet st) (grid st)) st'
  where (t, pos@(x,y), ori, minos) = tet st
        rc = rowsCompleted (tet st) (grid st)
        (t', g') = nextTet (randSeed st)
