@@ -11,13 +11,14 @@ data State = Between (Maybe GameState) -- state of previous game, if any
                          GridState  -- previous game grid
                          GameState  -- new game state
            | InGame GameState
+           | Paused GameState
 
 inGame :: (GameState -> GameState) -> State -> State
 inGame f (InGame gst) = InGame (f gst)
 inGame f st           = st
 
 data GEvent = TimeElapse | KeyPressed Key
-data Key = KUp | KDown | KLeft | KRight | KSpace | KNum Int
+data Key = KUp | KDown | KLeft | KRight | KSpace | KNum Int | KP | OtherKey
 
 data GameState = GState
   { lvl         :: (Int, Int)  -- level, and maxFrameCnt = (6 - lvl) `max` 0

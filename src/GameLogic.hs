@@ -25,9 +25,15 @@ nextState (InGame state) (KeyPressed KRight) = moveRight state
 nextState (InGame state) (KeyPressed KDown)  = moveDown state
 nextState (InGame state) (KeyPressed KUp)    = simpRotate state
 nextState (InGame state) (KeyPressed KSpace) = fastDrop state
+nextState (InGame state) (KeyPressed KP) = Paused state
+nextState st@(InGame state) _ = st
 
 nextState (RowComplete _ _ state) TimeElapse = InGame state
 nextState st@(RowComplete _ _ _) _ = st
+
+nextState (Paused state) (KeyPressed _) = InGame state
+nextState st@(Paused state) _ = st
+
 
 initState :: Int -> StdGen -> GameState
 initState lvl seed =

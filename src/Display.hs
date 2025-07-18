@@ -22,6 +22,12 @@ display (GameLogic (InGame state)) =
   pictures [ board state
            , panel state
            ]
+
+display (GameLogic (Paused state)) =
+  pictures [ boardPaused state
+           , panel state
+           ]
+
 display (RowCompleteAnim rc old state fc) =
   pictures [ boardAnim rc old fc
            , panel state
@@ -39,6 +45,21 @@ board st | (t, _, _, minos) <- tet st =
             (pictures [ border, drawShadow (snd (shadow st))
                       , drawTetrad t minos])
          : drawGrid (grid st))
+
+
+boardPaused :: GameState -> Picture
+boardPaused st | (t, _, _, minos) <- tet st =
+        translate (- brdWidth' * gridSize * 0.5)
+                  (- brdHeight' * gridSize * 0.5) $
+        pictures
+         [ scale gridSize gridSize border
+         , translate 20 (brdHeight' * gridSize * 0.5) .
+           scale 0.15 0.15 $
+             text "Paused"
+         , translate 10 (brdHeight' * gridSize * 0.5 - 20) .
+           scale 0.1 0.1 $
+             text "Press any key to continue"
+         ]
 
 boardAnim :: [Int] -> GridState -> Int -> Picture
 boardAnim rc old fc =

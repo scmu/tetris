@@ -28,6 +28,10 @@ input (EventKey (SpecialKey KeyLeft)  Down _ _) =
   gameLogic (flip nextState (KeyPressed KLeft))
 input (EventKey (SpecialKey KeySpace) Down _ _) =
   gameLogic (flip nextState (KeyPressed KSpace))
+input (EventKey (Char 'P') Down _ _) =
+  gameLogic (flip nextState (KeyPressed KP))
+input (EventKey (Char 'p') Down _ _) =
+  gameLogic (flip nextState (KeyPressed KP))
 input (EventKey (Char '0') Down _ _) =
   gameLogic (flip nextState (KeyPressed (KNum 0)))
 input (EventKey (Char '1') Down _ _) =
@@ -42,6 +46,8 @@ input (EventKey (Char '5') Down _ _) =
   gameLogic (flip nextState (KeyPressed (KNum 5)))
 input (EventKey (Char '6') Down _ _) =
   gameLogic (flip nextState (KeyPressed (KNum 6)))
+input (EventKey (Char _) Down _ _) =
+  gameLogic (flip nextState (KeyPressed OtherKey))
 input _ = id
 
 nextFrame :: Float -> InterfaceState -> InterfaceState
