@@ -26,6 +26,8 @@ nextState (InGame state) (KeyPressed KDown)  = moveDown state
 nextState (InGame state) (KeyPressed KUp)    = simpRotate state
 nextState (InGame state) (KeyPressed KSpace) = fastDrop state
 nextState (InGame state) (KeyPressed KP) = Paused state
+nextState (InGame state) (KeyPressed KR) =
+  Between (Just state) (randSeed state)
 nextState st@(InGame state) _ = st
 
 nextState (RowComplete _ _ state) TimeElapse = levelUpCheck state

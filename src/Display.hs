@@ -220,14 +220,14 @@ endPrompt st = pictures $
 -- instructions panel
 
 instr :: Picture
-instr = translate (brdWidth' * gridSize / 2 + 10) 0 $
-  linesOfText 0.15 25
-   [ "arrows move"
-   , "up   rotate"
-   , "space drop "
-   , "P   pause"
-   , "R   restart"
-   , "Q   quit"]
+instr = pictures $
+  [ translate (brdWidth' * gridSize / 2 + 10) 0 $
+     linesOfText 0.15 25
+      [ "arrows", "up", "space", "P", "R", "ESC"]
+  , translate (brdWidth' * gridSize / 2 + 10 + 70) 0 $
+     linesOfText 0.15 25
+      [ "move", "rotate", "drop", "pause", "restart", "quit"]
+  ]
 
 -- picture elements
 

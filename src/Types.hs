@@ -20,7 +20,8 @@ inGame f (InGame gst) = InGame (f gst)
 inGame f st           = st
 
 data GEvent = TimeElapse | KeyPressed Key
-data Key = KUp | KDown | KLeft | KRight | KSpace | KNum Int | KP | OtherKey
+data Key = KUp | KDown | KLeft | KRight | KSpace | KNum Int
+         | KP | KR | OtherKey
 
 data GameState = GState
   { lvl         :: (Int, Int)  -- level, and maxFrameCnt = (6 - lvl) `max` 0

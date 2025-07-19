@@ -32,6 +32,10 @@ input (EventKey (Char 'P') Down _ _) =
   gameLogic (flip nextState (KeyPressed KP))
 input (EventKey (Char 'p') Down _ _) =
   gameLogic (flip nextState (KeyPressed KP))
+input (EventKey (Char 'R') Down _ _) =
+  gameLogic (flip nextState (KeyPressed KR))
+input (EventKey (Char 'r') Down _ _) =
+  gameLogic (flip nextState (KeyPressed KR))
 input (EventKey (Char '0') Down _ _) =
   gameLogic (flip nextState (KeyPressed (KNum 0)))
 input (EventKey (Char '1') Down _ _) =
