@@ -16,36 +16,43 @@ display (GameLogic (Between Nothing _)) =
 display (GameLogic (Between (Just prevGame) _)) =
   pictures [ board prevGame
            , panel prevGame
+           , instr
            , endPrompt prevGame
            ]
 display (GameLogic (InGame state)) =
   pictures [ board state
            , panel state
+           , instr
            ]
 
 display (GameLogic (RowComplete _ prev _)) =
   pictures [ board prev
            , panel prev
+           , instr
            ]
 
 display (GameLogic (LevelUp _ state)) =
   pictures [ board state
            , panel state
+           , instr
            ]
 
 display (GameLogic (Paused state)) =
   pictures [ boardPaused state
            , panel state
+           , instr
            ]
 
 display (RowCompleteAnim rc old state fc) =
   pictures [ boardRCAnim rc (grid old) fc
            , panel state
+           , instr
            ]
 
 display (LevelUpAnim lvl state _) =
   pictures [ boardLevelUpAnim lvl
            , panel state
+           , instr
            ]
 
 rowCompleteAnimFrame :: Int
@@ -203,11 +210,24 @@ panel state =
 endPrompt :: GameState -> Picture
 endPrompt st = pictures $
   [ color (withAlpha 0.5 (greyN 0.9)) $ rectangleSolid 800 300
-  , translate (- (winWidth' * 0.3)) 30 .
-     scale 0.3 0.3 . text $ "Game Over"
-  , translate (- (winWidth' * 0.3)) (-10) .
-     scale 0.3 0.3 . text $ ("Score: " ++ show (score st))
+  , translate (- (winWidth' * 0.3)) 30 $
+     linesOfText 0.3 40
+              [ "Game Over"
+               , "Score: " ++ show (score st)
+               , "Choose Level (0..6) to Restart" ]
   ]
+
+-- instructions panel
+
+instr :: Picture
+instr = translate (brdWidth' * gridSize / 2 + 10) 0 $
+  linesOfText 0.15 25
+   [ "arrows move"
+   , "up   rotate"
+   , "space drop "
+   , "P   pause"
+   , "R   restart"
+   , "Q   quit"]
 
 -- picture elements
 
@@ -221,3 +241,7 @@ square (x,y) len =
 rectBox :: Point -> Float -> Float -> Picture
 rectBox (x, y) width height =
   line [(x,y), (x+width ,y), (x+width,y+height), (x, y+height), (x,y)]
+
+linesOfText :: Float -> Float -> [String] -> Picture
+linesOfText size skip = pictures . zipWith ln [0..]
+  where ln i xs = translate 0 (- i * skip) (scale size size (text xs))
