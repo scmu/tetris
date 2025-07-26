@@ -4,7 +4,7 @@ import Graphics.Gloss
 import Graphics.Gloss.Data.ViewPort
 import Graphics.Gloss.Interface.IO.Game
 
-import System.Random (mkStdGen, initStdGen)
+import System.Random (StdGen, mkStdGen, initStdGen)
 
 import Config
 import qualified Display
@@ -14,8 +14,13 @@ import InterfaceTypes
 
 main :: IO ()
 main = do randSeed <- initStdGen
-          play windowDisplay white 15 (GameLogic (Between Nothing randSeed))
+          play windowDisplay white 15
+            (initIState randSeed)
             Display.display input nextFrame
+
+initIState :: StdGen -> InterfaceState
+initIState randSeed = IState (winWidth, winHeight)
+                             (GameLogic (Between Nothing randSeed))
 
 input :: Event -> InterfaceState -> InterfaceState
 input (EventKey (SpecialKey KeyUp)    Down _ _) =
@@ -52,24 +57,28 @@ input (EventKey (Char '6') Down _ _) =
   gameLogic (flip nextState (KeyPressed (KNum 6)))
 input (EventKey (Char _) Down _ _) =
   gameLogic (flip nextState (KeyPressed OtherKey))
+input (EventResize (w,h)) = Display.resizeWindow (w, h)
 input _ = id
 
 nextFrame :: Float -> InterfaceState -> InterfaceState
-nextFrame _ (GameLogic (RowComplete rc prev state)) =
+nextFrame _ is = is { presState = nextFramePres (presState is)}
+
+nextFramePres :: PresentationState -> PresentationState
+nextFramePres (GameLogic (RowComplete rc prev state)) =
     RowCompleteAnim rc prev state Display.rowCompleteAnimFrame
-nextFrame _ (RowCompleteAnim rc prev state 0) =
+nextFramePres (RowCompleteAnim rc prev state 0) =
     GameLogic (nextState (RowComplete rc prev state) TimeElapse)
-nextFrame _ (RowCompleteAnim rc prev state n) =
+nextFramePres (RowCompleteAnim rc prev state n) =
     RowCompleteAnim rc prev state (n-1)
 
-nextFrame _ (GameLogic (LevelUp lvl state)) =
+nextFramePres (GameLogic (LevelUp lvl state)) =
     LevelUpAnim lvl state Display.levelUpAnimFrame
-nextFrame _ (LevelUpAnim lvl state 0) =
+nextFramePres (LevelUpAnim lvl state 0) =
     GameLogic (nextState (LevelUp lvl state) TimeElapse)
-nextFrame _ (LevelUpAnim lvl state n) =
+nextFramePres (LevelUpAnim lvl state n) =
     LevelUpAnim lvl state (n-1)
 
-nextFrame _ (GameLogic state) = GameLogic (nextState state TimeElapse)
+nextFramePres (GameLogic state) = GameLogic (nextState state TimeElapse)
 
 
 windowDisplay :: Display

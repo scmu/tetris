@@ -10,46 +10,49 @@ import Config
 import GameLogic
 
 display :: InterfaceState -> Picture
-display (GameLogic (Between Nothing _)) =
+display is = displayAbs (presState is)
+
+displayAbs :: PresentationState -> Picture
+displayAbs (GameLogic (Between Nothing _)) =
    translate (- winWidth' * 0.25) 0 .
    scale 0.4 0.4 . Text $ "Choose Level (0..6)"
-display (GameLogic (Between (Just prevGame) _)) =
+displayAbs (GameLogic (Between (Just prevGame) _)) =
   pictures [ board prevGame
            , panel prevGame
            , instr
            , endPrompt prevGame
            ]
-display (GameLogic (InGame state)) =
+displayAbs (GameLogic (InGame state)) =
   pictures [ board state
            , panel state
            , instr
            ]
 
-display (GameLogic (RowComplete _ prev _)) =
+displayAbs (GameLogic (RowComplete _ prev _)) =
   pictures [ board prev
            , panel prev
            , instr
            ]
 
-display (GameLogic (LevelUp _ state)) =
+displayAbs (GameLogic (LevelUp _ state)) =
   pictures [ board state
            , panel state
            , instr
            ]
 
-display (GameLogic (Paused state)) =
+displayAbs (GameLogic (Paused state)) =
   pictures [ boardPaused state
            , panel state
            , instr
            ]
 
-display (RowCompleteAnim rc old state fc) =
+displayAbs (RowCompleteAnim rc old state fc) =
   pictures [ boardRCAnim rc (grid old) fc
            , panel state
            , instr
            ]
 
-display (LevelUpAnim lvl state _) =
+displayAbs (LevelUpAnim lvl state _) =
   pictures [ boardLevelUpAnim lvl
            , panel state
            , instr
@@ -60,6 +63,9 @@ rowCompleteAnimFrame = 4
 
 levelUpAnimFrame :: Int
 levelUpAnimFrame = 10
+
+resizeWindow :: (Int, Int) -> InterfaceState -> InterfaceState
+resizeWindow (w, h) is = is { windowSize = (w, h) }
 
 -- In Game
 
