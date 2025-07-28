@@ -3,8 +3,32 @@ module InterfaceTypes where
 import Types
 
 data InterfaceState = IState
-     { windowSize :: (Int, Int)   -- width, height
+     { windowSize :: (Int, Int)       -- width, height
+     , dimens     :: Dimensions
      , presState  :: PresentationState
+     }
+
+data Dimensions = Dimens
+     { canvasSize :: (Float, Float)  -- width, height
+     , gridSize   :: Float
+
+     , brdSize    :: (Float, Float)
+     , brdShift   :: (Float, Float)
+
+     , panelSize     :: (Float, Float)
+     , panelShift    :: (Float, Float)
+     , panelTxtPad   :: Float
+     , panelTxtScale :: Float
+     , panelTxtSkip  :: Float
+
+     , instrShift    :: (Float, Float)
+     , instrTxtScale :: Float
+     , instrTxtSkip  :: Float
+
+     , pauseTxtScale :: Float
+     , contTxtScale  :: Float
+
+     , lvlUpTxtScale :: Float
      }
 
 data PresentationState =   -- what we are currently showing the users

@@ -19,8 +19,11 @@ main = do randSeed <- initStdGen
             Display.display input nextFrame
 
 initIState :: StdGen -> InterfaceState
-initIState randSeed = IState (winWidth, winHeight)
-                             (GameLogic (Between Nothing randSeed))
+initIState randSeed = IState
+    { windowSize = (winWidth, winHeight)
+    , dimens = Display.calcDimensions (winWidth, winHeight)
+    , presState = GameLogic (Between Nothing randSeed)
+    }
 
 input :: Event -> InterfaceState -> InterfaceState
 input (EventKey (SpecialKey KeyUp)    Down _ _) =

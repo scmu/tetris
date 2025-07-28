@@ -9,53 +9,85 @@ import InterfaceTypes
 import Config
 import GameLogic
 
-display :: InterfaceState -> Picture
-display is = displayAbs (presState is)
+calcDimensions :: (Int, Int) -> Dimensions
+calcDimensions (ww, wh) = Dimens
+   { canvasSize = (w, h)
+   , gridSize   = gridSz
 
-displayAbs :: PresentationState -> Picture
-displayAbs (GameLogic (Between Nothing _)) =
+   , brdSize    = (gridSz * fromIntegral brdWidth, h)
+   , brdShift   = (- w/2, - h/2)
+
+   , panelSize     = (gridSz * 7, gridSz * 6)
+   , panelShift    = (w/2 - gridSz, h/2)
+   , panelTxtPad   = gridSz / 2
+   , panelTxtScale = gridSz / glossFontHeight
+   , panelTxtSkip  = gridSz
+
+   , instrShift    = (w/2 - gridSz, 0 )
+   , instrTxtScale = gridSz / glossFontHeight
+   , instrTxtSkip  = gridSz
+
+   , pauseTxtScale = gridSz / glossFontHeight
+   , contTxtScale  = gridSz * 0.6 / glossFontHeight
+
+   , lvlUpTxtScale = gridSz / glossFontHeight
+   }
+  where h = (fromIntegral wh - 2 * margin) `max` minCanvasHeight
+        w = h * 2 / 3
+        gridSz = h / fromIntegral brdHeight
+
+glossFontHeight :: Float
+glossFontHeight = 133 -- 200
+
+---
+
+display :: InterfaceState -> Picture
+display is = displayAbs (dimens is) (presState is)
+
+displayAbs :: Dimensions -> PresentationState -> Picture
+displayAbs _ (GameLogic (Between Nothing _)) =
    translate (- winWidth' * 0.25) 0 .
    scale 0.4 0.4 . Text $ "Choose Level (0..6)"
-displayAbs (GameLogic (Between (Just prevGame) _)) =
-  pictures [ board prevGame
-           , panel prevGame
-           , instr
+displayAbs dimens (GameLogic (Between (Just prevGame) _)) =
+  pictures [ board dimens prevGame
+           , panel dimens prevGame
+           , instr dimens
            , endPrompt prevGame
            ]
-displayAbs (GameLogic (InGame state)) =
-  pictures [ board state
-           , panel state
-           , instr
+displayAbs dimens (GameLogic (InGame state)) =
+  pictures [ board dimens state
+           , panel dimens state
+           , instr dimens
            ]
 
-displayAbs (GameLogic (RowComplete _ prev _)) =
-  pictures [ board prev
-           , panel prev
-           , instr
+displayAbs dimens (GameLogic (RowComplete _ prev _)) =
+  pictures [ board dimens prev
+           , panel dimens prev
+           , instr dimens
            ]
 
-displayAbs (GameLogic (LevelUp _ state)) =
-  pictures [ board state
-           , panel state
-           , instr
+displayAbs dimens (GameLogic (LevelUp _ state)) =
+  pictures [ board dimens state
+           , panel dimens state
+           , instr dimens
            ]
 
-displayAbs (GameLogic (Paused state)) =
-  pictures [ boardPaused state
-           , panel state
-           , instr
+displayAbs dimens (GameLogic (Paused state)) =
+  pictures [ boardPaused dimens state
+           , panel dimens state
+           , instr dimens
            ]
 
-displayAbs (RowCompleteAnim rc old state fc) =
-  pictures [ boardRCAnim rc (grid old) fc
-           , panel state
-           , instr
+displayAbs dimens (RowCompleteAnim rc old state fc) =
+  pictures [ boardRCAnim dimens rc (grid old) fc
+           , panel dimens state
+           , instr dimens
            ]
 
-displayAbs (LevelUpAnim lvl state _) =
-  pictures [ boardLevelUpAnim lvl
-           , panel state
-           , instr
+displayAbs dimens (LevelUpAnim lvl state _) =
+  pictures [ boardLevelUpAnim dimens lvl
+           , panel dimens state
+           , instr dimens
            ]
 
 rowCompleteAnimFrame :: Int
@@ -65,80 +97,94 @@ levelUpAnimFrame :: Int
 levelUpAnimFrame = 10
 
 resizeWindow :: (Int, Int) -> InterfaceState -> InterfaceState
-resizeWindow (w, h) is = is { windowSize = (w, h) }
+resizeWindow (w, h) is = is { windowSize = (w, h)
+                            , dimens = calcDimensions (w, h)}
 
 -- In Game
 
-board :: GameState -> Picture
-board st | (t, _, _, minos) <- tet st =
-        translate (- brdWidth' * gridSize * 0.5)
-                  (- brdHeight' * gridSize * 0.5) $
+board :: Dimensions -> GameState -> Picture
+board dims st | (t, _, _, minos) <- tet st =
+        translate shx shy $
         pictures
-         ( scale gridSize gridSize
-            (pictures [ border, drawShadow (snd (shadow st))
-                      , drawTetrad t minos])
-         : drawGrid (grid st))
+         ( scale gridSz gridSz
+            (pictures [ border dims
+                      , drawShadow (snd (shadow st))
+                      , drawTetrad t minos ])
+         : drawGrid dims (grid st))
+    where (shx, shy) = brdShift dims
+          gridSz = gridSize dims
 
-
-boardPaused :: GameState -> Picture
-boardPaused st | (t, _, _, minos) <- tet st =
-        translate (- brdWidth' * gridSize * 0.5)
-                  (- brdHeight' * gridSize * 0.5) $
+boardPaused :: Dimensions -> GameState -> Picture
+boardPaused dims st | (t, _, _, minos) <- tet st =
+        translate shx shy $
         pictures
-         [ scale gridSize gridSize border
-         , translate 20 (brdHeight' * gridSize * 0.5) .
-           scale 0.15 0.15 $
+         [ scale gridSz gridSz (border dims)
+         , translate 20 (w * 0.5) .
+           scale sc1 sc1 $
              text "Paused"
-         , translate 10 (brdHeight' * gridSize * 0.5 - 20) .
-           scale 0.1 0.1 $
+         , translate 10 (w * 0.5 - gridSz) .
+           scale sc2 sc2 $
              text "Press any key to continue"
          ]
+    where (shx, shy) = brdShift dims
+          gridSz = gridSize dims
+          (w, h) = canvasSize dims
+          sc1 = pauseTxtScale dims
+          sc2 = contTxtScale dims
 
-boardRCAnim :: [Int] -> GridState -> Int -> Picture
-boardRCAnim rc old fc =
-        translate (- brdWidth' * gridSize * 0.5)
-                  (- brdHeight' * gridSize * 0.5) $
+boardRCAnim :: Dimensions -> [Int] -> GridState -> Int -> Picture
+boardRCAnim dims rc old fc =
+        translate shx shy $
         pictures
-         (scale gridSize gridSize border :
-          drawGridAnim rc old fc)
+         (scale gridSz gridSz (border dims) :
+          drawGridAnim dims rc old fc)
+    where (shx, shy) = brdShift dims
+          gridSz = gridSize dims
 
-boardLevelUpAnim :: Int -> Picture
-boardLevelUpAnim lvl =
-        translate (- brdWidth' * gridSize * 0.5)
-                  (- brdHeight' * gridSize * 0.5) $
+boardLevelUpAnim :: Dimensions -> Int -> Picture
+boardLevelUpAnim dims lvl =
+        translate shx shy $
         pictures
-         [ scale gridSize gridSize border
-         , translate 20 (brdHeight' * gridSize * 0.5) .
-           scale 0.15 0.15 $
+         [ scale gridSz gridSz (border dims)
+         , translate 20 (w * 0.5) .
+           scale sc sc $
              text ("Level " ++ show lvl)
          ]
+    where (shx, shy) = brdShift dims
+          gridSz = gridSize dims
+          (w, h) = canvasSize dims
+          sc = lvlUpTxtScale dims
 
-border :: Picture
-border = Line [(0, brdHeight'), (0,0), (brdWidth', 0), (brdWidth', brdHeight')]
 
-drawGrid :: GridState -> [Picture]
-drawGrid grid = map drawOneMino coords
+border :: Dimensions -> Picture
+border dims = Line [(0, bh), (0,0), (bw, 0), (bw, bh)]
+ where (bw, bh) = (brdWidth', brdHeight')
+
+drawGrid :: Dimensions -> GridState -> [Picture]
+drawGrid dims grid = map drawOneMino coords
    where drawOneMino pos@(x,y) = case grid ! pos of
             7 -> if x /= brdWidth - 1 then
-                    dot (fromIntegral (x+1) * gridSize,
-                         fromIntegral (y+1) * gridSize)
+                    dot (fromIntegral (x+1) * gridSz,
+                         fromIntegral (y+1) * gridSz)
                    else Blank
-            t -> scale gridSize gridSize (drawMino t pos)
+            t -> scale gridSz gridSz (drawMino t pos)
+         gridSz = gridSize dims
 
 coords :: [Pos]
-coords = [(x,y) | x <- [0 .. brdWidth - 1], y <- [0 .. brdHeight]]
+coords = [(x,y) | x <- [0 .. brdWidth - 1], y <- [0 .. brdHeight - 1]]
 
-drawGridAnim :: [Int] -> GridState -> Int ->  [Picture]
-drawGridAnim rc grid fc = map drawOneMino coords
+drawGridAnim :: Dimensions -> [Int] -> GridState -> Int ->  [Picture]
+drawGridAnim dims rc grid fc = map drawOneMino coords
    where drawOneMino pos@(x,y) = case grid ! pos of
             7 -> if x /= brdWidth - 1 then
-                    dot (fromIntegral (x+1) * gridSize,
-                         fromIntegral (y+1) * gridSize)
+                    dot (fromIntegral (x+1) * gridSz,
+                         fromIntegral (y+1) * gridSz)
                    else Blank
-            t -> scale gridSize gridSize
+            t -> scale gridSz gridSz
                   (if even fc && y `elem` rc then
                         drawMinoAlpha t pos 0.5
                    else drawMino t pos)
+         gridSz = gridSize dims
 
 drawTetrad :: Tetrad -> Minos -> Picture
 drawTetrad t minos =
@@ -193,23 +239,23 @@ drawShadowMino (x,y) = color (withAlpha 0.5 (greyN 0.9)) (square (x',y') 1)
 
 -- panel
 
-panel :: GameState -> Picture
-panel state =
-   translate (brdWidth' * gridSize / 2 + 10) (gridSize * 10) .
-   pictures $ [ rectBox (0,0) (gridSize * 4 + 60) (- 150)
+panel :: Dimensions -> GameState -> Picture
+panel dims state =
+   translate px py .
+   pictures $ [ rectBox (0,0) pw (- ph)
               , next
-              , levelInfo
-              , rowCInfo
-              , scoreInfo ]
- where next = translate (gridSize * 2 + 5) (- (gridSize * 2 + 10) )
-                (scale gridSize gridSize (drawTetrad' (nextT state) TUp))
-       textStartY = gridSize * 3 + 10
-       levelInfo = translate 10 (- (textStartY + 10)) . scale 0.15 0.15
-                    $ text ("Level: " ++ show (fst . lvl $ state))
-       rowCInfo = translate 10 (- (textStartY + 35)) . scale 0.15 0.15
-                    $ text ("Rows: " ++ show (rowsCleared state))
-       scoreInfo = translate 10 (- (textStartY + 60)) . scale 0.15 0.15
-                    $ text ("Score: " ++ show (score state))
+              , info ]
+ where next = translate (gridSz * 2 + 5) (- (gridSz * 2 + 10) )
+                (scale gridSz gridSz (drawTetrad' (nextT state) TUp))
+       textStartY = gridSz * 3 + 10
+       info = translate (panelTxtPad dims) (- textStartY) $
+              linesOfText (panelTxtScale dims) (panelTxtSkip dims)
+                 [ "Level: " ++ show (fst . lvl $ state)
+                 , "Rows: " ++ show (rowsCleared state)
+                 , "Score: " ++ show (score state) ]
+       gridSz = gridSize dims
+       (px, py) = panelShift dims
+       (pw, ph) = panelSize dims
 
 -- game over prompt
 
@@ -225,15 +271,17 @@ endPrompt st = pictures $
 
 -- instructions panel
 
-instr :: Picture
-instr = pictures $
-  [ translate (brdWidth' * gridSize / 2 + 10) 0 $
-     linesOfText 0.15 25
+instr :: Dimensions -> Picture
+instr dims = pictures $
+  [ translate sx sy $ linesOfText sc sk
       [ "arrows", "up", "space", "P", "R", "ESC"]
-  , translate (brdWidth' * gridSize / 2 + 10 + 70) 0 $
-     linesOfText 0.15 25
+  , translate (sx + gridSz * 4) sy $ linesOfText sc sk
       [ "move", "rotate", "drop", "pause", "restart", "quit"]
   ]
+  where gridSz = gridSize dims
+        (sx, sy) = instrShift dims
+        sc = instrTxtScale dims
+        sk = instrTxtSkip dims
 
 -- picture elements
 

@@ -14,6 +14,14 @@ winWidth', winHeight' :: Float
 winWidth'  = fromIntegral winWidth
 winHeight' = fromIntegral winHeight
 
+margin :: Float
+margin = 30
+
+minCanvasHeight :: Float
+minCanvasHeight = 300
+
+---
+
 brdWidth, brdHeight, topBuffer :: Int
 brdWidth  = 10
 brdHeight = 20
@@ -23,8 +31,8 @@ brdWidth', brdHeight' :: Float
 brdWidth'  = fromIntegral brdWidth
 brdHeight' = fromIntegral brdHeight
 
-gridSize :: Float
-gridSize = 20
+--gridSize :: Float
+--gridSize = 20
 
 ---
 
